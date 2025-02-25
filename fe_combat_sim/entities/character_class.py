@@ -2,10 +2,10 @@
 Character class module for Fire Emblem Combat Simulator.
 """
 
-# Import from old location
+# Import from old location with the updated GBA classes
 from entities.character_class import (
     CharacterClass, 
-    INFANTRY, KNIGHT, CAVALIER, PEGASUS_KNIGHT,
-    WYVERN_RIDER, MAGE, LORD, PREDEFINED_CLASSES,
-    get_class
+    GBA_CLASSES,
+    get_class,
+    PREDEFINED_CLASSES
 )

@@ -6,8 +6,7 @@ Includes predefined weapons, character templates, etc.
 from fe_combat_sim.entities.weapon import Weapon
 from fe_combat_sim.entities.character import Character
 from fe_combat_sim.entities.character_class import (
-    CharacterClass, INFANTRY, KNIGHT, CAVALIER, 
-    PEGASUS_KNIGHT, WYVERN_RIDER, MAGE, LORD
+    CharacterClass, GBA_CLASSES, get_class
 )
 
 # Predefined weapons from Fire Emblem 6 (Binding Blade), 7 (Blazing Blade), and 8 (Sacred Stones)
@@ -178,39 +177,139 @@ WEAPONS = {
     "Naglfar": Weapon("Naglfar", "Tome", might=18, hit=85, crit=0, range=(1, 2), uses=25),
 }
 
-# Character templates with reasonable stat distributions
-CHARACTER_TEMPLATES = {
-    "Lord": {
-        "class": LORD,
-        "stats": {"hp": 20, "str": 5, "mag": 1, "skl": 7, "spd": 7, "lck": 7, "def": 5, "res": 1},
-        "growth_rates": {"hp": 0.7, "str": 0.45, "mag": 0.15, "skl": 0.5, "spd": 0.5, "lck": 0.5, "def": 0.3, "res": 0.25}
-    },
-    "Cavalier": {
-        "class": CAVALIER,
-        "stats": {"hp": 20, "str": 6, "mag": 0, "skl": 5, "spd": 5, "lck": 3, "def": 7, "res": 0},
-        "growth_rates": {"hp": 0.8, "str": 0.5, "mag": 0.0, "skl": 0.4, "spd": 0.35, "lck": 0.25, "def": 0.45, "res": 0.2}
-    },
-    "Knight": {
-        "class": KNIGHT,
-        "stats": {"hp": 23, "str": 8, "mag": 0, "skl": 4, "spd": 1, "lck": 2, "def": 11, "res": 0},
-        "growth_rates": {"hp": 0.9, "str": 0.5, "mag": 0.0, "skl": 0.35, "spd": 0.2, "lck": 0.2, "def": 0.6, "res": 0.15}
-    },
-    "Pegasus Knight": {
-        "class": PEGASUS_KNIGHT,
-        "stats": {"hp": 17, "str": 4, "mag": 2, "skl": 6, "spd": 9, "lck": 6, "def": 4, "res": 5},
-        "growth_rates": {"hp": 0.6, "str": 0.35, "mag": 0.2, "skl": 0.5, "spd": 0.6, "lck": 0.5, "def": 0.2, "res": 0.5}
-    },
-    "Wyvern Rider": {
-        "class": WYVERN_RIDER,
-        "stats": {"hp": 22, "str": 7, "mag": 0, "skl": 5, "spd": 6, "lck": 2, "def": 9, "res": 0},
-        "growth_rates": {"hp": 0.8, "str": 0.55, "mag": 0.0, "skl": 0.4, "spd": 0.4, "lck": 0.2, "def": 0.5, "res": 0.1}
-    },
-    "Mage": {
-        "class": MAGE,
-        "stats": {"hp": 16, "str": 1, "mag": 5, "skl": 4, "spd": 5, "lck": 4, "def": 2, "res": 5},
-        "growth_rates": {"hp": 0.55, "str": 0.1, "mag": 0.6, "skl": 0.4, "spd": 0.45, "lck": 0.4, "def": 0.15, "res": 0.5}
-    },
-}
+# Create character templates for all GBA classes 
+GBA_CHARACTER_TEMPLATES = {}
+
+# Create basic template data for each class
+for class_name, class_obj in GBA_CLASSES.items():
+    # Set base stats appropriate for the class
+    base_stats = {}
+    
+    # Basic stats template based on class type
+    if "Magic" in class_obj.class_types:
+        # Magic user stats with high magic, resistance
+        base_stats = {
+            "hp": 16 + (2 if class_obj.promoted else 0), 
+            "str": 2, 
+            "mag": 5 + (3 if class_obj.promoted else 0),
+            "skl": 4 + (2 if class_obj.promoted else 0), 
+            "spd": 5 + (2 if class_obj.promoted else 0), 
+            "lck": 4,
+            "def": 2 + (1 if class_obj.promoted else 0), 
+            "res": 5 + (3 if class_obj.promoted else 0)
+        }
+    elif "Armored" in class_obj.class_types:
+        # Armored unit stats with high defense
+        base_stats = {
+            "hp": 22 + (4 if class_obj.promoted else 0), 
+            "str": 8 + (3 if class_obj.promoted else 0), 
+            "mag": 0,
+            "skl": 4 + (2 if class_obj.promoted else 0), 
+            "spd": 2 + (1 if class_obj.promoted else 0), 
+            "lck": 2,
+            "def": 12 + (4 if class_obj.promoted else 0), 
+            "res": 1 + (2 if class_obj.promoted else 0)
+        }
+    elif "Flying" in class_obj.class_types:
+        # Flying unit stats with high speed
+        base_stats = {
+            "hp": 18 + (3 if class_obj.promoted else 0), 
+            "str": 5 + (3 if class_obj.promoted else 0), 
+            "mag": 1,
+            "skl": 6 + (2 if class_obj.promoted else 0), 
+            "spd": 9 + (3 if class_obj.promoted else 0), 
+            "lck": 5,
+            "def": 5 + (2 if class_obj.promoted else 0), 
+            "res": 5 + (2 if class_obj.promoted else 0)
+        }
+    elif "Horseback" in class_obj.class_types:
+        # Mounted unit stats with balanced distribution
+        base_stats = {
+            "hp": 20 + (3 if class_obj.promoted else 0), 
+            "str": 6 + (3 if class_obj.promoted else 0), 
+            "mag": 1,
+            "skl": 5 + (2 if class_obj.promoted else 0), 
+            "spd": 6 + (2 if class_obj.promoted else 0), 
+            "lck": 3,
+            "def": 6 + (3 if class_obj.promoted else 0), 
+            "res": 2 + (2 if class_obj.promoted else 0)
+        }
+    elif "Royal" in class_obj.class_types:
+        # Lord stats with good all-around stats
+        base_stats = {
+            "hp": 19 + (3 if class_obj.promoted else 0), 
+            "str": 5 + (3 if class_obj.promoted else 0), 
+            "mag": 2,
+            "skl": 7 + (3 if class_obj.promoted else 0), 
+            "spd": 8 + (3 if class_obj.promoted else 0), 
+            "lck": 7,
+            "def": 5 + (2 if class_obj.promoted else 0), 
+            "res": 3 + (2 if class_obj.promoted else 0)
+        }
+    elif "Monster" in class_obj.class_types:
+        # Monster stats with high HP and attack
+        base_stats = {
+            "hp": 25 + (5 if class_obj.promoted else 0), 
+            "str": 9 + (4 if class_obj.promoted else 0), 
+            "mag": 0,
+            "skl": 3 + (2 if class_obj.promoted else 0), 
+            "spd": 4 + (1 if class_obj.promoted else 0), 
+            "lck": 0,
+            "def": 7 + (3 if class_obj.promoted else 0), 
+            "res": 3 + (2 if class_obj.promoted else 0)
+        }
+    else:
+        # Default infantry stats
+        base_stats = {
+            "hp": 20 + (3 if class_obj.promoted else 0), 
+            "str": 6 + (3 if class_obj.promoted else 0), 
+            "mag": 0,
+            "skl": 6 + (2 if class_obj.promoted else 0), 
+            "spd": 7 + (2 if class_obj.promoted else 0), 
+            "lck": 4,
+            "def": 5 + (2 if class_obj.promoted else 0), 
+            "res": 2 + (1 if class_obj.promoted else 0)
+        }
+    
+    # Add growth rates appropriate for the class
+    growth_rates = {
+        "hp": 0.7 + (0.1 if class_obj.promoted else 0),
+        "str": 0.4 + (0.1 if class_obj.promoted else 0),
+        "mag": 0.3 if "Magic" in class_obj.class_types else 0.1,
+        "skl": 0.4 + (0.1 if class_obj.promoted else 0),
+        "spd": 0.4 + (0.1 if class_obj.promoted else 0),
+        "lck": 0.3,
+        "def": 0.3 + (0.1 if class_obj.promoted else 0),
+        "res": 0.3 if "Magic" in class_obj.class_types else 0.2
+    }
+    
+    # Class specific adjustments
+    if "Myrmidon" in class_name or "Swordmaster" in class_name:
+        # Higher speed and skill for sword specialists
+        base_stats["spd"] += 2
+        base_stats["skl"] += 2
+        growth_rates["spd"] += 0.15
+        growth_rates["skl"] += 0.15
+    
+    if "Berserker" in class_name:
+        # Higher strength and crit for berserkers
+        base_stats["str"] += 3
+        growth_rates["str"] += 0.2
+    
+    if "Bishop" in class_name or "Sage" in class_name:
+        # Higher magic and resistance for promoted magic users
+        base_stats["mag"] += 2
+        base_stats["res"] += 2
+    
+    # Create the template
+    GBA_CHARACTER_TEMPLATES[class_name] = {
+        "class": class_obj,
+        "stats": base_stats,
+        "growth_rates": growth_rates
+    }
+
+# Merge with existing CHARACTER_TEMPLATES for backward compatibility
+CHARACTER_TEMPLATES.update(GBA_CHARACTER_TEMPLATES)
 
 def get_weapon(name):
     """Get a predefined weapon by name."""
