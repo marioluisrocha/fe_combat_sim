@@ -80,6 +80,18 @@ Choose characters from **over 60 different classes** and equip them with **more 
 if 'combat_log' not in st.session_state:
     st.session_state.combat_log = []
 
+# Setup default selected values for classes in session state
+if 'attacker_selected_class' not in st.session_state:
+    st.session_state.attacker_selected_class = "Lord (Roy)"
+if 'defender_selected_class' not in st.session_state:
+    st.session_state.defender_selected_class = "General"
+
+# Initialize weapon selection state
+if 'attacker_weapon' not in st.session_state:
+    st.session_state.attacker_weapon = "Iron Sword"
+if 'defender_weapon' not in st.session_state:
+    st.session_state.defender_weapon = "Silver Lance"
+
 # Group weapons by type for easier selection
 def group_weapons_by_type():
     grouped = {}
@@ -176,7 +188,7 @@ st.header("Character Creation")
 # Create columns for character creation
 col1, col2 = st.columns(2)
 
-# Function to create character selection UI
+# Function to create character selection UI with radio buttons
 def character_creator(column, character_key, default_name):
     with column:
         st.subheader(f"{character_key.title()}")
@@ -192,8 +204,7 @@ def character_creator(column, character_key, default_name):
         class_category_tabs = st.tabs(list(class_groups.keys()))
         
         # Variable to store the selected class
-        selected_class = None
-        selected_class_name = None
+        selected_class_name = st.session_state.get(f"{character_key}_selected_class")
         
         # Display classes by category
         for i, (category, classes) in enumerate(class_groups.items()):
@@ -201,42 +212,38 @@ def character_creator(column, character_key, default_name):
                 if classes:  # Only show if category has classes
                     classes_dict = {name: obj for name, obj in classes}
                     
-                    # Create a radio selection with formatted class names
+                    # Create radio options for class selection
                     class_options = []
                     for class_name, class_obj in classes:
                         is_promoted = class_obj.promoted
                         is_monster = "Monster" in class_obj.class_types
-                        formatted_name = f"{class_name} ({'Promoted' if is_promoted else 'Base'}) - {', '.join(class_obj.weapons)}"
-                        class_options.append((class_name, formatted_name, is_promoted, is_monster))
+                        formatted_name = f"{class_name} ({'Promoted' if is_promoted else 'Base'}) - {', '.join(class_obj.weapons or ['None'])}"
+                        class_options.append((class_name, formatted_name))
                     
-                    # Create columns for class selection to make the UI more compact
-                    cols = st.columns(2)
-                    for j, (class_name, formatted_name, is_promoted, is_monster) in enumerate(class_options):
-                        col_idx = j % 2
-                        with cols[col_idx]:
-                            if st.checkbox(
-                                formatted_name,
-                                key=f"{character_key}_{category}_{class_name}",
-                                help=f"Class types: {', '.join(classes_dict[class_name].class_types)}"
-                            ):
-                                selected_class = classes_dict[class_name]
-                                selected_class_name = class_name
-                                
-                                # Uncheck other class options
-                                for k, (other_name, _, _, _) in enumerate(class_options):
-                                    if other_name != class_name:
-                                        st.session_state[f"{character_key}_{category}_{other_name}"] = False
-                                
-                                # Uncheck classes in other categories
-                                for other_category, other_classes in class_groups.items():
-                                    if other_category != category:
-                                        for other_name, _ in other_classes:
-                                            st.session_state[f"{character_key}_{other_category}_{other_name}"] = False
+                    # Use radio buttons instead of checkboxes
+                    if class_options:
+                        selected = st.radio(
+                            f"Select {category} Class",
+                            [name for name, _ in class_options],
+                            format_func=lambda name: next((fmt for n, fmt in class_options if n == name), name),
+                            key=f"{character_key}_{category}_radio"
+                        )
+                        
+                        # Update the selected class if user selects a class in this category
+                        if st.button(f"Choose {selected}", key=f"{character_key}_{category}_select"):
+                            st.session_state[f"{character_key}_selected_class"] = selected
+                            selected_class_name = selected
+                            # Force rerun to show the selected class effects
+                            st.experimental_rerun()
         
         # If no class is selected, use a default
-        if not selected_class:
-            selected_class_name = "Lord (Roy)"  # Default class
-            selected_class = CHARACTER_TEMPLATES[selected_class_name]["class"]
+        if not selected_class_name:
+            selected_class_name = "Lord (Roy)" if character_key == "attacker" else "General"
+            st.session_state[f"{character_key}_selected_class"] = selected_class_name
+        
+        # Display the currently selected class
+        st.info(f"Current selection: **{selected_class_name}**")
+        selected_class = CHARACTER_TEMPLATES[selected_class_name]["class"]
         
         # Level selection
         level = st.slider(
@@ -283,6 +290,7 @@ def character_creator(column, character_key, default_name):
                         key=f"legendary_weapon_{character_key}",
                         format_func=lambda x: f"⚔️ {x} (Might: {usable_legendary[x].might})"
                     )
+                    st.session_state[f"{character_key}_weapon"] = weapon_name
             else:
                 # Regular weapon selection with tabs for each usable type
                 if not usable_groups:
@@ -291,8 +299,8 @@ def character_creator(column, character_key, default_name):
                 else:
                     weapon_tabs = st.tabs([wt.capitalize() for wt in usable_groups.keys()])
                     
-                    # Store the selected weapon name
-                    weapon_name = None
+                    # Default to previously selected weapon or None
+                    weapon_name = st.session_state.get(f"{character_key}_weapon")
                     
                     for i, weapon_type in enumerate(usable_groups.keys()):
                         with weapon_tabs[i]:
@@ -309,16 +317,11 @@ def character_creator(column, character_key, default_name):
                                 )
                                 
                                 # If this tab's weapon is selected, update the weapon_name
-                                if st.checkbox(f"Equip this {weapon_type}", 
-                                             key=f"equip_{character_key}_{weapon_type}"):
+                                if st.button(f"Equip this {weapon_type}", key=f"equip_{character_key}_{weapon_type}"):
                                     weapon_name = selected_weapon
-                                    
-                                    # Uncheck other weapon types
-                                    for other_type in usable_groups.keys():
-                                        if other_type != weapon_type:
-                                            key = f"equip_{character_key}_{other_type}"
-                                            if key in st.session_state:
-                                                st.session_state[key] = False
+                                    st.session_state[f"{character_key}_weapon"] = weapon_name
+                                    # Force rerun to show the selected weapon effects
+                                    st.experimental_rerun()
         
         # Create character
         character = create_character_from_template(
