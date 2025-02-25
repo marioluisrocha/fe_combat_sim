@@ -8,6 +8,11 @@ from fe_combat_sim.entities.character import Character
 from fe_combat_sim.entities.character_class import (
     CharacterClass, GBA_CLASSES, get_class
 )
+# Import basic classes from separate module to avoid circular imports
+from fe_combat_sim.entities.basic_classes import (
+    INFANTRY, KNIGHT, CAVALIER, PEGASUS_KNIGHT,
+    WYVERN_RIDER, MAGE, LORD
+)
 
 # Predefined weapons from Fire Emblem 6 (Binding Blade), 7 (Blazing Blade), and 8 (Sacred Stones)
 WEAPONS = {
@@ -309,7 +314,18 @@ for class_name, class_obj in GBA_CLASSES.items():
     }
 
 # Merge with existing CHARACTER_TEMPLATES for backward compatibility
+CHARACTER_TEMPLATES = {}  # Start with a fresh dictionary to avoid circular dependencies
 CHARACTER_TEMPLATES.update(GBA_CHARACTER_TEMPLATES)
+
+# Add backward compatibility templates
+CHARACTER_TEMPLATES.update({
+    "Lord": GBA_CHARACTER_TEMPLATES["Lord (Roy)"],
+    "Knight": GBA_CHARACTER_TEMPLATES["Knight"],
+    "Cavalier": GBA_CHARACTER_TEMPLATES["Cavalier"],
+    "Pegasus Knight": GBA_CHARACTER_TEMPLATES["Pegasus Knight"],
+    "Wyvern Rider": GBA_CHARACTER_TEMPLATES["Wyvern Rider"],
+    "Mage": GBA_CHARACTER_TEMPLATES["Mage"]
+})
 
 def get_weapon(name):
     """Get a predefined weapon by name."""
