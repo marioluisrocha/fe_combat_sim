@@ -1,6 +1,7 @@
 # Fire Emblem Combat Simulator
 
-A Python package for simulating turn-based tactical RPG combat in the style of Fire Emblem.
+A Python package for simulating turn-based tactical RPG combat in the style of Fire Emblem. 
+
 
 ## Overview
 
